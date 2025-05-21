@@ -253,34 +253,62 @@ function deletePlayer(playerId) {
 
 // Función para configurar todos los event listeners
 function setupEventListeners() {
+    console.log('Configurando event listeners...');
+    
     // Admin button opens login modal
     if (adminButton) {
-        adminButton.addEventListener('click', () => {
-            loginModal.style.display = 'block';
+        console.log('Configurando botón de admin');
+        // Eliminar cualquier event listener anterior
+        const newAdminButton = adminButton.cloneNode(true);
+        adminButton.parentNode.replaceChild(newAdminButton, adminButton);
+        
+        // Añadir nuevo event listener
+        newAdminButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Botón de admin clickeado');
+            if (loginModal) {
+                loginModal.style.display = 'block';
+                console.log('Modal mostrado');
+            } else {
+                console.error('Modal no encontrado');
+            }
         });
+    } else {
+        console.error('Botón de admin no encontrado');
     }
     
     // Close modals
-    if (closeLoginModal) {
-        closeLoginModal.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-        });
-    }
+    const closeButtons = document.querySelectorAll('.close');
+    console.log('Botones de cierre encontrados:', closeButtons.length);
     
-    if (closeAdminModal) {
-        closeAdminModal.addEventListener('click', () => {
-            adminDashboard.style.display = 'none';
+    closeButtons.forEach(button => {
+        // Eliminar event listeners anteriores
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        // Añadir nuevo event listener
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Botón de cierre clickeado');
+            const modal = this.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
+                console.log('Modal cerrado');
+            }
         });
-    }
+    });
     
     // Close modals when clicking outside
-    window.addEventListener('click', (event) => {
-        if (event.target === loginModal) {
-            loginModal.style.display = 'none';
-        }
-        if (event.target === adminDashboard) {
-            adminDashboard.style.display = 'none';
-        }
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            // Solo cerrar si se hace click directamente en el modal (no en su contenido)
+            if (e.target === this) {
+                console.log('Click fuera del modal, cerrando');
+                this.style.display = 'none';
+            }
+        });
     });
     
     // Login form submission

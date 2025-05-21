@@ -1133,6 +1133,60 @@ footer {
         </div>
     </div>
 
+    <!-- Asegurarse de que los scripts se carguen correctamente -->
+    <script>
+    // Función para verificar si la página está dentro de un iframe
+    function inIframe() {
+        try {
+            return window.self !== window.top;
+        } catch (e) {
+            return true;
+        }
+    }
+    
+    // Cargar los scripts solo cuando el DOM esté completamente cargado
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM completamente cargado');
+        
+        // Verificar si estamos en un iframe
+        if (inIframe()) {
+            console.log('Ejecutando dentro de un iframe');
+        }
+        
+        // Verificar que los elementos existen antes de intentar añadir event listeners
+        const adminButton = document.getElementById('admin-button');
+        if (adminButton) {
+            console.log('Botón de admin encontrado, añadiendo event listener');
+            adminButton.addEventListener('click', function() {
+                console.log('Botón de admin clickeado');
+                const loginModal = document.getElementById('login-modal');
+                if (loginModal) {
+                    loginModal.style.display = 'block';
+                    console.log('Modal de login mostrado');
+                } else {
+                    console.error('Modal de login no encontrado');
+                }
+            });
+        } else {
+            console.error('Botón de admin no encontrado');
+        }
+        
+        // Verificar otros elementos importantes
+        if (!document.getElementById('login-modal')) {
+            console.error('Modal de login no encontrado en el DOM');
+        }
+        
+        if (!document.getElementById('active-tables-container')) {
+            console.error('Contenedor de mesas activas no encontrado');
+        }
+        
+        if (!document.getElementById('waiting-lists-container')) {
+            console.error('Contenedor de listas de espera no encontrado');
+        }
+    });
+    </script>
+    
+    <!-- Cargar los scripts de la aplicación -->
     <script src="js/app-cancun.js"></script>
     <script src="js/app-cancun-part2.js"></script>
 </body>
