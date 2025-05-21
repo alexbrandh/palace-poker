@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palace Poker Room - Acceso de Supervisores</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --dark-bg: #121212;
+            --dark-surface: #1e1e1e;
+            --dark-surface-light: #2d2d2d;
+            --gold: #d4af37;
+            --gold-light: #f0cf64;
+            --gold-dark: #9e8128;
+            --text-light: #f5f5f5;
+            --text-dark: #212121;
+            --status-present: #4CAF50;
+            --status-absent: #f44336;
+            --status-change: #2196F3;
+            --accent: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background-color: var(--dark-surface);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid var(--gold-dark);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            height: 80px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--gold-light);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--dark-surface-light);
+            border-radius: 6px;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .gold-button {
+            background-color: var(--gold);
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .gold-button:hover {
+            background-color: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .gold-button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .back-link {
+            color: var(--gold-light);
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--gold);
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background-color: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <img src="https://uploads-ssl.webflow.com/6478fa7955456e6a89b9618b/66022e12de3c0f05dfd7a2d7_LOGOS.png" alt="Palace Poker Room">
+        </div>
+        
+        <h1>Acceso de Supervisores</h1>
+        
+        <div id="error-message" class="error-message">
+            Usuario o contraseña incorrectos. Por favor intente nuevamente.
+        </div>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="gold-button">Iniciar Sesión</button>
+        </form>
+        
+        <a href="cancun-standalone.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver a Lista de Espera</a>
+    </div>
+    
+    <footer>
+        &copy; <span id="current-year"></span> Palace Poker Room
+    </footer>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdTlhwvEzHTnRqGmLhUARucCgw7K76XJE",
+            authDomain: "lista-de-espera-palace.firebaseapp.com",
+            databaseURL: "https://lista-de-espera-palace-default-rtdb.firebaseio.com",
+            projectId: "lista-de-espera-palace",
+            storageBucket: "lista-de-espera-palace.appspot.com",
+            messagingSenderId: "1001196881051",
+            appId: "1:1001196881051:web:9af1c75de15c15b41fc0e0"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Esta aplicación es específica para Cancún
+        const currentLocation = 'cancun';
+        
+        // Referencia a la base de datos
+        const db = firebase.database();
+        
+        // Credenciales de administrador (simplificado)
+        const adminCredentials = {
+            username: 'admin',
+            password: 'poker123'
+        };
+        
+        // Elementos DOM
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const currentYearElement = document.getElementById('current-year');
+        
+        // Actualizar año actual en el footer
+        if (currentYearElement) {
+            currentYearElement.textContent = new Date().getFullYear();
+        }
+        
+        // Manejar envío del formulario de login
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                // Verificar credenciales
+                if (username === adminCredentials.username && password === adminCredentials.password) {
+                    // Credenciales correctas, redirigir a panel de admin
+                    window.location.href = 'admin-panel.html';
+                } else {
+                    // Credenciales incorrectas, mostrar error
+                    errorMessage.style.display = 'block';
+                    // Limpiar contraseña
+                    document.getElementById('password').value = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
