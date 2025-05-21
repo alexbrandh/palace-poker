@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palace Poker Room - Panel de Administración</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --dark-bg: #121212;
+            --dark-surface: #1e1e1e;
+            --dark-surface-light: #2d2d2d;
+            --gold: #d4af37;
+            --gold-light: #f0cf64;
+            --gold-dark: #9e8128;
+            --text-light: #f5f5f5;
+            --text-dark: #212121;
+            --status-present: #4CAF50;
+            --status-absent: #f44336;
+            --status-change: #2196F3;
+            --accent: #8b5cf6;
+            --stake-low: #4CAF50;
+            --stake-medium: #2196F3;
+            --stake-high: #9c27b0;
+            --stake-special: #ff5722;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        h1 {
+            color: var(--gold);
+            font-size: 24px;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .gold-button {
+            background-color: var(--gold);
+            color: var(--text-dark);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .gold-button:hover {
+            background-color: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--dark-surface-light);
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            color: #999;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .tab-button.active {
+            color: var(--gold);
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background-color: var(--dark-surface);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: var(--gold-light);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--dark-surface-light);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--dark-surface-light);
+            border-radius: 4px;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .list-container {
+            margin-top: 20px;
+        }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--dark-surface-light);
+            transition: background-color 0.2s ease;
+        }
+
+        .list-item:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: var(--gold-light);
+        }
+
+        .item-subtitle {
+            font-size: 14px;
+            color: #bbb;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .edit-button {
+            background-color: var(--stake-medium);
+            color: white;
+        }
+
+        .delete-button {
+            background-color: var(--status-absent);
+            color: white;
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 15px 0;
+            text-align: center;
+            color: #777;
+            border-top: 1px solid var(--gold-dark);
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header>
+            <div class="logo-container">
+                <img src="https://uploads-ssl.webflow.com/6478fa7955456e6a89b9618b/66022e12de3c0f05dfd7a2d7_LOGOS.png" alt="Palace Poker Room" class="logo-img">
+                <h1>Panel de Administración - Cancún</h1>
+            </div>
+            <div class="admin-actions">
+                <a href="cancun-standalone.html" class="gold-button"><i class="fas fa-arrow-left"></i> Volver a Lista de Espera</a>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" data-tab="tables">Mesas</button>
+            <button class="tab-button" data-tab="players">Jugadores</button>
+        </div>
+
+        <div id="tables-tab" class="tab-content active">
+            <div class="grid-container">
+                <div class="card">
+                    <h2>Añadir Mesa</h2>
+                    <form id="table-form">
+                        <div class="form-group">
+                            <label for="table-number">Número de Mesa:</label>
+                            <input type="number" id="table-number" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="game-type">Tipo de Juego:</label>
+                            <select id="game-type" required>
+                                <option value="Texas NLHE">Texas NLHE</option>
+                                <option value="Omaha PLO">Omaha PLO</option>
+                                <option value="Texas/Omaha">Texas/Omaha</option>
+                                <option value="OMAHA/Mata AA">OMAHA/Mata AA</option>
+                                <option value="Dealer Choice">Dealer Choice</option>
+                                <option value="Mata AA">Mata AA</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stake">Stake:</label>
+                            <select id="stake" required>
+                                <option value="$25/$50">$25/$50</option>
+                                <option value="$50/$50">$50/$50</option>
+                                <option value="$50/$100">$50/$100</option>
+                                <option value="$100/$100">$100/$100</option>
+                                <option value="$100/$200">$100/$200</option>
+                                <option value="Botón $50/$200">Botón $50/$200</option>
+                                <option value="Botón $100/$400">Botón $100/$400</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="available-seats">Asientos Disponibles:</label>
+                            <input type="number" id="available-seats" min="0" max="9" value="9" required>
+                        </div>
+                        <button type="submit" class="gold-button">Añadir Mesa</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>Mesas Activas</h2>
+                    <div class="list-container" id="tables-list">
+                        <p>Cargando mesas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="players-tab" class="tab-content">
+            <div class="grid-container">
+                <div class="card">
+                    <h2>Añadir Jugador</h2>
+                    <form id="player-form">
+                        <div class="form-group">
+                            <label for="player-name">Nombre:</label>
+                            <input type="text" id="player-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-game-type">Tipo de Juego:</label>
+                            <select id="player-game-type" required>
+                                <option value="Texas NLHE">Texas NLHE</option>
+                                <option value="Omaha PLO">Omaha PLO</option>
+                                <option value="Texas/Omaha">Texas/Omaha</option>
+                                <option value="OMAHA/Mata AA">OMAHA/Mata AA</option>
+                                <option value="Dealer Choice">Dealer Choice</option>
+                                <option value="Mata AA">Mata AA</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-stake">Stake:</label>
+                            <select id="player-stake" required>
+                                <option value="$25/$50">$25/$50</option>
+                                <option value="$50/$50">$50/$50</option>
+                                <option value="$50/$100">$50/$100</option>
+                                <option value="$100/$100">$100/$100</option>
+                                <option value="$100/$200">$100/$200</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-status">Estado:</label>
+                            <select id="player-status" required>
+                                <option value="Presente">Presente</option>
+                                <option value="Ausente">Ausente</option>
+                                <option value="Jugando">Jugando</option>
+                                <option value="Cambio de Mesa">Cambio de Mesa</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="gold-button">Añadir Jugador</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>Jugadores en Lista de Espera</h2>
+                    <div class="list-container" id="players-list">
+                        <p>Cargando jugadores...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            &copy; <span id="current-year"></span> Palace Poker Room - Sistema de Lista de Espera
+        </footer>
+    </div>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdTlhwvEzHTnRqGmLhUARucCgw7K76XJE",
+            authDomain: "lista-de-espera-palace.firebaseapp.com",
+            databaseURL: "https://lista-de-espera-palace-default-rtdb.firebaseio.com",
+            projectId: "lista-de-espera-palace",
+            storageBucket: "lista-de-espera-palace.appspot.com",
+            messagingSenderId: "1001196881051",
+            appId: "1:1001196881051:web:9af1c75de15c15b41fc0e0"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Referencia a la base de datos
+        const db = firebase.database();
+        
+        // Localización actual (Cancún)
+        const currentLocation = 'cancun';
+        
+        // Referencias de Firebase
+        const locationRef = db.ref(`locations/${currentLocation}`);
+        const tablesRef = locationRef.child('tables');
+        const playersRef = locationRef.child('players');
+        
+        // Elementos DOM
+        const tablesList = document.getElementById('tables-list');
+        const playersList = document.getElementById('players-list');
+        const tableForm = document.getElementById('table-form');
+        const playerForm = document.getElementById('player-form');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const currentYearElement = document.getElementById('current-year');
+        
+        // Variables para almacenar datos
+        let tables = [];
+        let players = [];
+        
+        // Actualizar año actual
+        if (currentYearElement) {
+            currentYearElement.textContent = new Date().getFullYear();
+        }
+        
+        // Cambio de pestañas
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.getAttribute('data-tab');
+                
+                // Cambiar pestaña activa
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Mostrar contenido de pestaña
+                tabContents.forEach(tab => tab.classList.remove('active'));
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            });
+        });
+        
+        // Función para generar ID único
+        function generateId() {
+            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+        
+        // Cargar mesas desde Firebase
+        function loadTables() {
+            tablesRef.on('value', snapshot => {
+                tables = [];
+                tablesList.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    tablesList.innerHTML = '<p>No hay mesas registradas</p>';
+                    return;
+                }
+                
+                // Crear lista de mesas
+                const ul = document.createElement('ul');
+                ul.className = 'item-list';
+                
+                snapshot.forEach(childSnapshot => {
+                    const tableId = childSnapshot.key;
+                    const table = childSnapshot.val();
+                    tables.push({id: tableId, ...table});
+                    
+                    const li = document.createElement('li');
+                    li.className = 'list-item';
+                    li.innerHTML = `
+                        <div class="item-info">
+                            <span class="item-title">Mesa ${table.tableNumber} - ${table.gameType}</span>
+                            <span class="item-subtitle">${table.stake} - ${table.availableSeats} asientos disponibles</span>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${tableId}">Editar</button>
+                            <button class="action-button delete-button" data-id="${tableId}">Eliminar</button>
+                        </div>
+                    `;
+                    
+                    ul.appendChild(li);
+                });
+                
+                tablesList.innerHTML = '';
+                tablesList.appendChild(ul);
+                
+                // Añadir event listeners a botones
+                document.querySelectorAll('#tables-list .delete-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const tableId = button.getAttribute('data-id');
+                        if (confirm('¿Estás seguro de eliminar esta mesa?')) {
+                            tablesRef.child(tableId).remove();
+                        }
+                    });
+                });
+            });
+        }
+        
+        // Cargar jugadores desde Firebase
+        function loadPlayers() {
+            playersRef.on('value', snapshot => {
+                players = [];
+                playersList.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    playersList.innerHTML = '<p>No hay jugadores registrados</p>';
+                    return;
+                }
+                
+                // Crear lista de jugadores
+                const ul = document.createElement('ul');
+                ul.className = 'item-list';
+                
+                snapshot.forEach(childSnapshot => {
+                    const playerId = childSnapshot.key;
+                    const player = childSnapshot.val();
+                    players.push({id: playerId, ...player});
+                    
+                    const li = document.createElement('li');
+                    li.className = 'list-item';
+                    li.innerHTML = `
+                        <div class="item-info">
+                            <span class="item-title">${player.name}</span>
+                            <span class="item-subtitle">${player.gameType} ${player.stake} - ${player.status}</span>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${playerId}">Editar</button>
+                            <button class="action-button delete-button" data-id="${playerId}">Eliminar</button>
+                        </div>
+                    `;
+                    
+                    ul.appendChild(li);
+                });
+                
+                playersList.innerHTML = '';
+                playersList.appendChild(ul);
+                
+                // Añadir event listeners a botones
+                document.querySelectorAll('#players-list .delete-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const playerId = button.getAttribute('data-id');
+                        if (confirm('¿Estás seguro de eliminar este jugador?')) {
+                            playersRef.child(playerId).remove();
+                        }
+                    });
+                });
+            });
+        }
+        
+        // Añadir mesa
+        if (tableForm) {
+            tableForm.addEventListener('submit', e => {
+                e.preventDefault();
+                
+                const newTable = {
+                    tableNumber: document.getElementById('table-number').value,
+                    gameType: document.getElementById('game-type').value,
+                    stake: document.getElementById('stake').value,
+                    availableSeats: document.getElementById('available-seats').value,
+                    tableStatus: 'active',
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                tablesRef.push(newTable)
+                    .then(() => {
+                        tableForm.reset();
+                        alert('Mesa añadida correctamente');
+                    })
+                    .catch(error => {
+                        console.error('Error al añadir mesa:', error);
+                        alert('Error al añadir mesa');
+                    });
+            });
+        }
+        
+        // Añadir jugador
+        if (playerForm) {
+            playerForm.addEventListener('submit', e => {
+                e.preventDefault();
+                
+                const newPlayer = {
+                    name: document.getElementById('player-name').value,
+                    gameType: document.getElementById('player-game-type').value,
+                    stake: document.getElementById('player-stake').value,
+                    status: document.getElementById('player-status').value,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                // Si el estado es "Jugando", establecer hora de inicio
+                if (newPlayer.status === 'Jugando') {
+                    newPlayer.startTime = new Date().getTime();
+                }
+                
+                playersRef.push(newPlayer)
+                    .then(() => {
+                        playerForm.reset();
+                        alert('Jugador añadido correctamente');
+                    })
+                    .catch(error => {
+                        console.error('Error al añadir jugador:', error);
+                        alert('Error al añadir jugador');
+                    });
+            });
+        }
+        
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTables();
+            loadPlayers();
+        });
+    </script>
+</body>
+</html>
