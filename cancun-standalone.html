@@ -715,6 +715,10 @@
             tableElement.className = `table-card ${getTableColorClass(table.stake)}`;
             tableElement.id = `table-${table.id}`;
             
+            // Obtener buy-in min y max desde los datos de la mesa o usar valores predeterminados
+            const minBuyin = table.minBuyin || 2000;
+            const maxBuyin = table.maxBuyin || 50000;
+            
             tableElement.innerHTML = `
                 <div class="table-header">
                     <h3>Mesa ${table.tableNumber} - ${table.gameType}</h3>
