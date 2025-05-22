@@ -253,6 +253,19 @@
         .buyin-info {
             font-size: 14px;
             color: #bbb;
+            margin-bottom: 6px;
+        }
+        
+        .call-time-info {
+            font-size: 14px;
+            color: var(--gold-light);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .call-time-value {
+            font-weight: bold;
         }
 
         .waiting-lists-container {
@@ -685,7 +698,10 @@
                         <span class="available-seats">${table.availableSeats}</span> puestos disponibles
                     </div>
                     <div class="buyin-info">
-                        Buy-in: $${formatNumber(table.buyinMin)} - $${formatNumber(table.buyinMax)}
+                        Buy-in: $${formatNumber(table.minBuyin || table.buyinMin || 1000)} - $${formatNumber(table.maxBuyin || table.buyinMax || 5000)}
+                    </div>
+                    <div class="call-time-info">
+                        <i class="fas fa-clock"></i> Call time: <span class="call-time-value">${table.callTime || 30}</span> minutos
                     </div>
                 </div>
             `;
