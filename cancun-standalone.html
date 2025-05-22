@@ -295,9 +295,27 @@
 
         .waiting-list-header h3 {
             font-size: 16px;
-            margin: 0;
+            margin: 0 0 5px 0;
             font-weight: 600;
             color: var(--gold-light);
+        }
+        
+        .list-details {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 13px;
+        }
+        
+        .list-call-time {
+            color: var(--gold-light);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .list-buyin {
+            color: #bbb;
         }
 
         .players-list {
@@ -639,6 +657,12 @@
         return new Intl.NumberFormat('es-MX').format(num);
     }
     
+    // Formatear el call time para mostrar horas en lugar de minutos
+    function formatCallTime(minutes) {
+        const hours = minutes / 60;
+        return (hours === 1) ? "1 hora" : `${hours} horas`;
+    }
+    
     // Verificar si un jugador ha cumplido su call time
     function hasPlayerCompletedCallTime(player) {
         if (player.status !== 'Jugando' || !player.startTime) {
@@ -684,6 +708,9 @@
         
         // Crear elemento para cada mesa
         activeTables.forEach(table => {
+            console.log("Renderizando mesa:", table);
+            const callTimeValue = table.callTime || 120;
+            
             const tableElement = document.createElement('div');
             tableElement.className = `table-card ${getTableColorClass(table.stake)}`;
             tableElement.id = `table-${table.id}`;
@@ -698,10 +725,10 @@
                         <span class="available-seats">${table.availableSeats}</span> puestos disponibles
                     </div>
                     <div class="buyin-info">
-                        Buy-in: $${formatNumber(table.minBuyin || table.buyinMin || 1000)} - $${formatNumber(table.maxBuyin || table.buyinMax || 5000)}
+                        Buy-in: $${formatNumber(minBuyin)} - $${formatNumber(maxBuyin)}
                     </div>
                     <div class="call-time-info">
-                        <i class="fas fa-clock"></i> Call time: <span class="call-time-value">${table.callTime || 30}</span> minutos
+                        <i class="fas fa-clock"></i> Call time: <span class="call-time-value">${callTimeValue === 120 ? '2 horas' : '3 horas'}</span>
                     </div>
                 </div>
             `;
@@ -749,9 +776,55 @@
             // Ordenar jugadores por timestamp (antiguos primero)
             groupPlayers.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             
+            // Buscar la información del call time para este tipo de juego y stake
+            let callTime = 120; // Valor por defecto (2 horas)
+            let buyinInfo = "";
+            
+            console.log("Buscando call time para grupo:", groupName);
+            
+            // Buscar en las mesas activas para obtener el call time correspondiente
+            const matchingTables = tables.filter(t => {
+                const tableGameStake = `${t.gameType} ${t.stake}`;
+                const matches = tableGameStake === groupName;
+                console.log("Comparando:", tableGameStake, "con", groupName, "coincide:", matches);
+                return matches;
+            });
+            
+            if (matchingTables.length > 0) {
+                // Usar el call time de la primera mesa que coincida
+                callTime = matchingTables[0].callTime || matchingTables[0].callTimeMinutes || 120;
+                console.log("Mesa coincidente encontrada, call time:", callTime, "minutos");
+                
+                // Obtener también la información de buy-in
+                const minBuyin = matchingTables[0].minBuyin || matchingTables[0].buyinMin || 2000;
+                const maxBuyin = matchingTables[0].maxBuyin || matchingTables[0].buyinMax || 5000;
+                buyinInfo = `Buy-in: $${formatNumber(minBuyin)} - $${formatNumber(maxBuyin)}`;
+            } else {
+                console.log("No se encontraron mesas coincidentes para este grupo. Usando valores por defecto.");
+                // Determinar call time según stake del grupo
+                if (groupName.includes('$50/$100') || 
+                    groupName.includes('$100/$100') || 
+                    groupName.includes('$100/$200') ||
+                    groupName.includes('Botón')) {
+                    callTime = 180; // 3 horas para stakes más altos
+                } else {
+                    callTime = 120; // 2 horas para stakes más bajos
+                }
+                console.log("Call time asignado por defecto según stake:", callTime, "minutos");
+            }
+            
             const listHeader = document.createElement('div');
             listHeader.className = 'waiting-list-header';
-            listHeader.innerHTML = `<h3>${groupName}</h3>`;
+            // Simplificar la presentación del call time
+            const callTimeDisplay = callTime === 120 ? '2 horas' : '3 horas';
+            
+            listHeader.innerHTML = `
+                <h3>${groupName}</h3>
+                <div class="list-details">
+                    <span class="list-call-time"><i class="fas fa-clock"></i> Call time: ${callTimeDisplay}</span>
+                    ${buyinInfo ? `<span class="list-buyin">${buyinInfo}</span>` : ''}
+                </div>
+            `;
             
             const playersList = document.createElement('ul');
             playersList.className = 'players-list';
@@ -793,6 +866,7 @@
                 tables.push({ id: tableId, ...tableData });
             });
             console.log("Mesas actualizadas:", tables.length);
+            console.log("Datos de mesas:", tables);
             renderActiveTables();
         }, (error) => {
             console.error("Error obteniendo mesas:", error);
