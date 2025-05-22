@@ -201,6 +201,15 @@
         .list-item:hover {
             background-color: rgba(0, 0, 0, 0.2);
         }
+        
+        .call-time-met {
+            color: var(--status-present);
+            font-weight: bold;
+        }
+        
+        .call-time-pending {
+            color: var(--status-absent);
+        }
 
         .item-info {
             display: flex;
@@ -303,9 +312,23 @@
                                 <option value="$50/$100">$50/$100</option>
                                 <option value="$100/$100">$100/$100</option>
                                 <option value="$100/$200">$100/$200</option>
+                                <option value="$100/$300">$100/$300</option>
+                                <option value="$200/$400">$200/$400</option>
                                 <option value="Botón $50/$200">Botón $50/$200</option>
                                 <option value="Botón $100/$400">Botón $100/$400</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="min-buyin">Buy-in Mínimo ($):</label>
+                            <input type="number" id="min-buyin" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="max-buyin">Buy-in Máximo ($):</label>
+                            <input type="number" id="max-buyin" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="call-time">Call Time Obligatorio (minutos):</label>
+                            <input type="number" id="call-time" min="0" value="30" required>
                         </div>
                         <div class="form-group">
                             <label for="available-seats">Asientos Disponibles:</label>
@@ -325,6 +348,14 @@
         </div>
 
         <div id="players-tab" class="tab-content">
+            <div class="grid-container">
+                <div class="card">
+                    <h2>Jugadores Activos</h2>
+                    <div class="list-container" id="active-players-list">
+                        <p>Cargando jugadores activos...</p>
+                    </div>
+                </div>
+            </div>
             <div class="grid-container">
                 <div class="card">
                     <h2>Añadir Jugador</h2>
@@ -352,6 +383,17 @@
                                 <option value="$50/$100">$50/$100</option>
                                 <option value="$100/$100">$100/$100</option>
                                 <option value="$100/$200">$100/$200</option>
+                                <option value="$100/$300">$100/$300</option>
+                                <option value="$200/$400">$200/$400</option>
+                                <option value="Botón $50/$200">Botón $50/$200</option>
+                                <option value="Botón $100/$400">Botón $100/$400</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="player-table">Mesa (si está jugando):</label>
+                            <select id="player-table">
+                                <option value="">No está jugando</option>
+                                <!-- Las mesas activas se cargarán dinámicamente -->
                             </select>
                         </div>
                         <div class="form-group">
@@ -470,7 +512,8 @@
                     li.innerHTML = `
                         <div class="item-info">
                             <span class="item-title">Mesa ${table.tableNumber} - ${table.gameType}</span>
-                            <span class="item-subtitle">${table.stake} - ${table.availableSeats} asientos disponibles</span>
+                            <span class="item-subtitle">${table.stake} - Buy-in: $${table.minBuyin} / $${table.maxBuyin}</span>
+                            <span class="item-subtitle">Call Time: ${table.callTime} min - ${table.availableSeats} asientos disponibles</span>
                         </div>
                         <div class="item-actions">
                             <button class="action-button edit-button" data-id="${tableId}">Editar</button>
@@ -501,42 +544,103 @@
             playersRef.on('value', snapshot => {
                 players = [];
                 playersList.innerHTML = '';
+                const activePlayersList = document.getElementById('active-players-list');
+                activePlayersList.innerHTML = '';
                 
                 if (!snapshot.exists()) {
                     playersList.innerHTML = '<p>No hay jugadores registrados</p>';
+                    activePlayersList.innerHTML = '<p>No hay jugadores activos</p>';
                     return;
                 }
                 
-                // Crear lista de jugadores
-                const ul = document.createElement('ul');
-                ul.className = 'item-list';
+                // Crear lista de jugadores en espera
+                const waitingList = document.createElement('ul');
+                waitingList.className = 'item-list';
+                
+                // Crear lista de jugadores activos
+                const activeList = document.createElement('ul');
+                activeList.className = 'item-list';
+                
+                // Jugadores en espera y jugadores activos
+                const waitingPlayers = [];
+                const activePlayers = [];
                 
                 snapshot.forEach(childSnapshot => {
                     const playerId = childSnapshot.key;
                     const player = childSnapshot.val();
-                    players.push({id: playerId, ...player});
+                    const playerWithId = {id: playerId, ...player};
+                    players.push(playerWithId);
                     
-                    const li = document.createElement('li');
-                    li.className = 'list-item';
-                    li.innerHTML = `
-                        <div class="item-info">
-                            <span class="item-title">${player.name}</span>
-                            <span class="item-subtitle">${player.gameType} ${player.stake} - ${player.status}</span>
-                        </div>
-                        <div class="item-actions">
-                            <button class="action-button edit-button" data-id="${playerId}">Editar</button>
-                            <button class="action-button delete-button" data-id="${playerId}">Eliminar</button>
-                        </div>
-                    `;
-                    
-                    ul.appendChild(li);
+                    // Separar jugadores activos y en espera
+                    if (player.status === 'Jugando') {
+                        activePlayers.push(playerWithId);
+                    } else {
+                        waitingPlayers.push(playerWithId);
+                    }
                 });
                 
-                playersList.innerHTML = '';
-                playersList.appendChild(ul);
+                // Procesar jugadores en espera
+                if (waitingPlayers.length === 0) {
+                    playersList.innerHTML = '<p>No hay jugadores en lista de espera</p>';
+                } else {
+                    waitingPlayers.forEach(player => {
+                        const li = document.createElement('li');
+                        li.className = 'list-item';
+                        li.innerHTML = `
+                            <div class="item-info">
+                                <span class="item-title">${player.name}</span>
+                                <span class="item-subtitle">${player.gameType} ${player.stake} - ${player.status}</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="action-button edit-button" data-id="${player.id}">Editar</button>
+                                <button class="action-button delete-button" data-id="${player.id}">Eliminar</button>
+                            </div>
+                        `;
+                        
+                        waitingList.appendChild(li);
+                    });
+                    
+                    playersList.innerHTML = '';
+                    playersList.appendChild(waitingList);
+                }
+                
+                // Procesar jugadores activos
+                if (activePlayers.length === 0) {
+                    activePlayersList.innerHTML = '<p>No hay jugadores activos</p>';
+                } else {
+                    activePlayers.forEach(player => {
+                        const now = new Date().getTime();
+                        const startTime = player.startTime || now;
+                        const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
+                        const callTimeMinutes = parseInt(player.callTime || 30);
+                        const callTimeMet = elapsedMinutes >= callTimeMinutes;
+                        
+                        const li = document.createElement('li');
+                        li.className = 'list-item';
+                        li.innerHTML = `
+                            <div class="item-info">
+                                <span class="item-title">${player.name}</span>
+                                <span class="item-subtitle">Mesa ${player.tableNumber || 'N/A'} - ${player.gameType} ${player.stake}</span>
+                                <span class="item-subtitle ${callTimeMet ? 'call-time-met' : 'call-time-pending'}">
+                                    Tiempo jugado: ${elapsedMinutes} min / Call time: ${callTimeMinutes} min
+                                    ${callTimeMet ? '✓ Cumplido' : '⏱ Pendiente'}
+                                </span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="action-button edit-button" data-id="${player.id}">Editar</button>
+                                <button class="action-button delete-button" data-id="${player.id}">Eliminar</button>
+                            </div>
+                        `;
+                        
+                        activeList.appendChild(li);
+                    });
+                    
+                    activePlayersList.innerHTML = '';
+                    activePlayersList.appendChild(activeList);
+                }
                 
                 // Añadir event listeners a botones
-                document.querySelectorAll('#players-list .delete-button').forEach(button => {
+                document.querySelectorAll('#players-list .delete-button, #active-players-list .delete-button').forEach(button => {
                     button.addEventListener('click', () => {
                         const playerId = button.getAttribute('data-id');
                         if (confirm('¿Estás seguro de eliminar este jugador?')) {
@@ -556,6 +660,9 @@
                     tableNumber: document.getElementById('table-number').value,
                     gameType: document.getElementById('game-type').value,
                     stake: document.getElementById('stake').value,
+                    minBuyin: document.getElementById('min-buyin').value,
+                    maxBuyin: document.getElementById('max-buyin').value,
+                    callTime: document.getElementById('call-time').value,
                     availableSeats: document.getElementById('available-seats').value,
                     tableStatus: 'active',
                     timestamp: firebase.database.ServerValue.TIMESTAMP
@@ -586,9 +693,23 @@
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 };
                 
-                // Si el estado es "Jugando", establecer hora de inicio
+                // Si el estado es "Jugando", establecer hora de inicio y mesa asignada
                 if (newPlayer.status === 'Jugando') {
-                    newPlayer.startTime = new Date().getTime();
+                    const tableSelect = document.getElementById('player-table');
+                    if (tableSelect.value) {
+                        newPlayer.startTime = new Date().getTime();
+                        newPlayer.tableId = tableSelect.value;
+                        
+                        // Buscar la información de la mesa para obtener el call time
+                        const selectedTable = tables.find(t => t.id === tableSelect.value);
+                        if (selectedTable) {
+                            newPlayer.callTime = selectedTable.callTime;
+                            newPlayer.tableNumber = selectedTable.tableNumber;
+                        }
+                    } else {
+                        alert('Selecciona una mesa si el jugador está jugando');
+                        return;
+                    }
                 }
                 
                 playersRef.push(newPlayer)
@@ -603,10 +724,93 @@
             });
         }
         
+        // Cargar las mesas en el selector de jugadores
+        function updateTableSelect() {
+            const tableSelect = document.getElementById('player-table');
+            if (!tableSelect) return;
+            
+            // Limpiar opciones excepto la primera
+            while (tableSelect.options.length > 1) {
+                tableSelect.remove(1);
+            }
+            
+            // Añadir mesas activas como opciones
+            tables.forEach(table => {
+                const option = document.createElement('option');
+                option.value = table.id;
+                option.textContent = `Mesa ${table.tableNumber} - ${table.gameType} ${table.stake}`;
+                tableSelect.appendChild(option);
+            });
+        }
+        
+        // Actualizar la UI cada minuto para refrescar los tiempos de juego
+        function startTimeUpdater() {
+            setInterval(() => {
+                // Solo recargar los jugadores activos sin hacer nueva consulta a Firebase
+                const activePlayersList = document.getElementById('active-players-list');
+                if (!activePlayersList) return;
+                
+                const activePlayers = players.filter(p => p.status === 'Jugando');
+                if (activePlayers.length === 0) {
+                    activePlayersList.innerHTML = '<p>No hay jugadores activos</p>';
+                    return;
+                }
+                
+                const activeList = document.createElement('ul');
+                activeList.className = 'item-list';
+                
+                activePlayers.forEach(player => {
+                    const now = new Date().getTime();
+                    const startTime = player.startTime || now;
+                    const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
+                    const callTimeMinutes = parseInt(player.callTime || 30);
+                    const callTimeMet = elapsedMinutes >= callTimeMinutes;
+                    
+                    const li = document.createElement('li');
+                    li.className = 'list-item';
+                    li.innerHTML = `
+                        <div class="item-info">
+                            <span class="item-title">${player.name}</span>
+                            <span class="item-subtitle">Mesa ${player.tableNumber || 'N/A'} - ${player.gameType} ${player.stake}</span>
+                            <span class="item-subtitle ${callTimeMet ? 'call-time-met' : 'call-time-pending'}">
+                                Tiempo jugado: ${elapsedMinutes} min / Call time: ${callTimeMinutes} min
+                                ${callTimeMet ? '✓ Cumplido' : '⏱ Pendiente'}
+                            </span>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${player.id}">Editar</button>
+                            <button class="action-button delete-button" data-id="${player.id}">Eliminar</button>
+                        </div>
+                    `;
+                    
+                    activeList.appendChild(li);
+                });
+                
+                activePlayersList.innerHTML = '';
+                activePlayersList.appendChild(activeList);
+                
+                // Re-añadir event listeners a botones
+                document.querySelectorAll('#active-players-list .delete-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const playerId = button.getAttribute('data-id');
+                        if (confirm('¿Estás seguro de eliminar este jugador?')) {
+                            playersRef.child(playerId).remove();
+                        }
+                    });
+                });
+            }, 60000); // Actualizar cada minuto
+        }
+        
         // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', () => {
             loadTables();
             loadPlayers();
+            startTimeUpdater();
+            
+            // Escuchar cambios en las mesas para actualizar el selector
+            tablesRef.on('value', () => {
+                updateTableSelect();
+            });
         });
     </script>
 </body>
